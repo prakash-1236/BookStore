@@ -1,0 +1,130 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Checkout{% endblock %}
+
+{% block main-content %}
+<div class="container">
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-danger" role="alert">
+            {{ msg }}
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row mt-5">
+        <div class="col-sm-6">
+            <h4>Order Summary</h4>
+            <hr>
+            {% if cart_items %}
+                {% for item in cart_items %}
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h5>Product: {{ item.product.title }}</h5>
+                        <p>Quantity: {{ item.quantity }}</p>
+                        <p class="fw-bold">Price: Rs. {{ item.product.discounted_price }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                <p class="fw-bold">Total Cost + Rs. 40 = Rs. {{ totalamount }}</p>
+            {% else %}
+                <p class="text-danger">Your cart is empty.</p>
+            {% endif %}
+
+            <small>
+                <strong>Terms and Conditions:</strong> Lorem ipsum dolor sit amet, consectetur adipisicing elit. 
+                Ducimus hic porro deserunt velit sed impedit et culpa pariatur nesciunt dolores voluptates, 
+                distinctio natus consequuntur vero! Non dolorem dolore corrupti ea.
+            </small>
+        </div>
+
+        <div class="col-sm-4 offset-sm-1">
+            <h4>Select Shipping Address</h4>
+            <hr>
+            <form method="post" id="myform">
+                {% csrf_token %}
+                {% if add %}
+                    {% for ad in add %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>{{ ad.name }}</h5>
+                            <p>Mobile: {{ ad.mobile }}</p>
+                            <p>{{ ad.locality }}, {{ ad.city }}, {{ ad.state }} - {{ ad.zipcode }}</p>
+                        </div>
+                    </div>
+                    <div class="form-check mt-2 mb-3">
+                        <input class="form-check-input" type="radio" name="custid" id="custadd{{ forloop.counter }}" value="{{ ad.id }}" required>
+                        <label class="form-check-label fw-bold" for="custadd{{ forloop.counter }}">
+                            Address {{ forloop.counter }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-danger">No saved addresses found. Please add an address first.</p>
+                {% endif %}
+
+                <div class="form-group mb-3">
+                    <label for="totalamount" class="form-label">Total Amount</label>
+                    <input type="number" class="form-control" name="totalamount" value="{{ totalamount }}" readonly>
+                </div>
+
+                <div class="text-end">
+                    <button id="rzp-button1" type="submit" class="btn btn-warning mt-3 fw-bold">Proceed to Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block payment-gateway %}
+
+<script>
+    var options = { 
+        "key": "{{ RAZOR_KEY_ID|default:'' }}",  // Use `default` to avoid empty values
+        "amount": "{{ razoramount|default:'0' }}",  // Ensure amount is set
+        "currency": "INR", 
+        "name": "Neel Products", 
+        "description": "Purchase Product", 
+        "order_id": "{{ order_id|default:'' }}",  // Ensure order_id is not empty
+        "handler": function (response) { 
+            console.log("Payment Success");
+
+            var form = document.getElementById("myform"); 
+            if (!form) {
+                alert("Form not found!");
+                return;
+            }
+
+            var custIdInput = form.elements["custid"];
+            if (!custIdInput || !custIdInput.value) {
+                alert("Customer ID not found. Please select an address.");
+                return;
+            }
+
+            var custId = encodeURIComponent(custIdInput.value);
+            var orderId = encodeURIComponent(response.razorpay_order_id);
+            var paymentId = encodeURIComponent(response.razorpay_payment_id);
+
+            window.location.href = `http://localhost:8000/paymentdone?order_id=${orderId}&payment_id=${paymentId}&cust_id=${custId}`;
+        },
+        "theme": { 
+            "color": "#3399cc"
+        }
+    }; 
+
+    var rzp1 = new Razorpay(options);
+
+    rzp1.on('payment.failed', function (response) { 
+        alert("Payment Failed: " + response.error.description);
+    });
+
+    document.getElementById('rzp-button1').addEventListener('click', function(e) { 
+        console.log("Button clicked");
+        e.preventDefault();
+        rzp1.open();
+    });
+</script>
+{% endblock payment-gateway %}

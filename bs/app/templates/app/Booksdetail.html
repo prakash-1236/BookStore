@@ -1,0 +1,51 @@
+{% extends 'app/base.html' %}
+{% load static %}
+
+{% block title %}Book Details{% endblock %}
+
+{% block main-content %}
+<div class="container my-5">
+   <div class="row justify-content-between">
+      <div class="col-lg-5 mt-5">
+         <img src="{{ books.books_image.url }}" class="img-fluid shadow-sm w-100 h-75" alt="{{ books.title }}">
+      </div>
+      <div class="col-lg-5">
+         <h1 class="font-georgia display-4">{{ books.title }}</h1>
+         <h5>Rs. {{ books.discounted_price }}/-</h5>
+         <small class="text-decoration-line-through text-muted fs-5">
+            <del>Rs. {{ books.selling_price }}/-</del>
+         </small>
+         <br><br>
+         <h4>Book Features</h4>
+         <ul class="fs-5">
+            <li>{{ books.description }}</li>
+            <li>Composition: {{ books.Composition }}</li>
+            <li>Use: {{ books.prodapp }}</li>
+         </ul>
+
+         <form action="{% url 'add_to_cart' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="prod_id" value="{{ books.id }}">
+            <button type="submit" class="btn btn-danger btn-lg">Add to Cart</button>
+        </form>
+           
+        <a href="{% url 'showcart'  %}" class="btn btn-dark btn-lg">Buy Now</a>
+
+
+
+        {% if wishlist %}
+        <a pid="{{ books.id }}" id="wishlist-icon-{{ books.id }}" 
+           class="minus-wishlist btn btn-danger shadow px-5 py-2 ms-4">
+           <i class="fas fa-heart fa-lg"></i>
+        </a>
+        {% else %}
+        <a pid="{{ books.id }}" id="wishlist-icon-{{ books.id }}" 
+           class="plus-wishlist btn btn-success shadow px-5 py-2 ms-4">
+           <i class="far fa-heart fa-lg"></i>
+        </a>
+        {% endif %}
+    
+      </div>
+   </div>
+</div>
+{% endblock %}
